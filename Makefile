@@ -13,7 +13,7 @@ endif
 TARGET:=$(BUILDDIR)/includer
 PREFIX:=~/.local
 CC:=gcc
-CFLAGS+= -std=c99 -Wall -Wextra -Wpedantic
+CFLAGS+= -std=c99 -Wall -Wextra -Wpedantic -Ilib/uthash/include
 
 # library packages for pkg-config
 PKGS:=
