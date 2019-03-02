@@ -71,10 +71,10 @@ size_t process_includes(char **dst, char const *sourcecode) {
 					char const *f = q;
 					while (*(++f) != '\"') {
 						if (*f == '\0') {
-							fprintf(stderr, "%d: Unexpected EOF\n", linen);
+							fprintf(stderr, "line %d: Unexpected EOF\n", linen);
 							goto fail;
 						} else if (*f == '\n') {
-							fprintf(stderr, "%d: Unexpected EOL\n", linen);
+							fprintf(stderr, "line %d: Unexpected EOL\n", linen);
 							goto fail;
 						}
 					}
