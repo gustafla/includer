@@ -1,8 +1,6 @@
-#include "oof.h"
+#include "test1.h"
 
-test
-
-#include "2.h"
-test
-#include "wow.h"
-#include "asd
+int main() {
+	test1();
+	return 0;
+}
