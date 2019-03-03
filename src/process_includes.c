@@ -19,6 +19,12 @@ int seek_line(char **c, bool(*cmp)(char)) {
 	return EXIT_SUCCESS;
 }
 
+void append(char **buffer, char *source, size_t *bufsize, size_t len) {
+	*buffer = (char*)realloc(*buffer, *bufsize + len);
+	memcpy(*buffer + *bufsize, source, len);
+	*bufsize += len;
+}
+
 int local_include(
 		char *q,
 		char **lastpoint,
@@ -31,7 +37,7 @@ int local_include(
 	char *f = q + 1;
 	seek_line(&f, cmp_is_not_quotation);
 
-	// allocate and set up a filename
+	// allocate and set up a filename buffer
 	size_t len = f - (q + 1);
 	char *filename = (char*)calloc(sizeof(char), len + 1);
 	strncpy(filename, q + 1, len);
@@ -50,9 +56,7 @@ int local_include(
 			fprintf(stderr, "Finished %s\n", filename);
 
 			// append to output buffer
-			*buffer = (char*)realloc(*buffer, *bufsize + len);
-			memcpy(*buffer + *bufsize, processed, len);
-			*bufsize += len;
+			append(buffer, processed, bufsize, len);
 
 			// mark last place before which did processing
 			while (*f != '\n' && *f != '\0') f++;
@@ -83,11 +87,9 @@ size_t process_includes(char **dst, char *sourcecode) {
 			continue;
 		} else if (newline && *i == '#') {
 			fprintf(stderr, "Preprocessor directive at line %d\n", linen);
-			char compare[KW_LEN];
-			strncpy(compare, i, KW_LEN-1);
 
 			// only process #include
-			if (strncmp(compare, KEYWORD, KW_LEN-1) == 0) {
+			if (strncmp(i, KEYWORD, KW_LEN-1) == 0) {
 				fprintf(stderr, "...which was an include\n");
 				// seek whitespace until filename quotation
 				char *q = i + KW_LEN;
@@ -98,10 +100,7 @@ size_t process_includes(char **dst, char *sourcecode) {
 					fprintf(stderr, "...which was a local include\n");
 
 					// copy input before include directive to output
-					size_t len = (size_t)(i - lastpoint);
-					*dst = (char*)realloc(*dst, bufsize + len);
-					memcpy(*dst + bufsize, lastpoint, len);
-					bufsize += len;
+					append(dst, lastpoint, &bufsize, (size_t)(i - lastpoint));
 
 					if (local_include(q, &lastpoint, dst, &bufsize)) {
 						fprintf(stderr, "Can't process line %d\n", linen);
@@ -114,10 +113,10 @@ size_t process_includes(char **dst, char *sourcecode) {
 	}
 
 	// append trailing input to output
-	size_t len = strlen(lastpoint);
-	*dst = (char*)realloc(*dst, bufsize + len + 1); // +1 for null term
-	memcpy(*dst+bufsize, lastpoint, len);
-	bufsize += len;
+	append(dst, lastpoint, &bufsize, strlen(lastpoint));
+
+	// null terminate
+	*dst = (char*)realloc(*dst, bufsize + 1);
 	(*dst)[bufsize] = '\0';
 
 	return bufsize;
