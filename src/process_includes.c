@@ -5,26 +5,31 @@
 #include <stdlib.h>
 #include <string.h>
 
-int process_local_include(
+bool cmp_is_not_quotation(char c) {
+	return c != '\"';
+}
+
+int seek_line(char **c, bool(*cmp)(char)) {
+	while (cmp(**c)) {
+		if (**c == '\0' || **c == '\n') {
+			return EXIT_FAILURE;
+		}
+		(*c)++;
+	}
+	return EXIT_SUCCESS;
+}
+
+int local_include(
 		char *q,
-		int linen,
 		char **lastpoint,
 		char **buffer,
 		size_t *bufsize) {
 
 	int rc = EXIT_FAILURE;
 
-	// find length of filename
-	char *f = q;
-	while (*(++f) != '\"') {
-		if (*f == '\0') {
-			fprintf(stderr, "line %d: Unexpected EOF\n", linen);
-			return EXIT_FAILURE;
-		} else if (*f == '\n') {
-			fprintf(stderr, "line %d: Unexpected EOL\n", linen);
-			return EXIT_FAILURE;
-		}
-	}
+	// find end of filename
+	char *f = q + 1;
+	seek_line(&f, cmp_is_not_quotation);
 
 	// allocate and set up a filename
 	size_t len = f - (q + 1);
@@ -98,8 +103,10 @@ size_t process_includes(char **dst, char *sourcecode) {
 					memcpy(*dst + bufsize, lastpoint, len);
 					bufsize += len;
 
-					if (process_local_include(q, linen,&lastpoint, dst,
-								&bufsize)) return 0;
+					if (local_include(q, &lastpoint, dst, &bufsize)) {
+						fprintf(stderr, "Can't process line %d\n", linen);
+						return 0;
+					}
 				}
 			}
 		}
