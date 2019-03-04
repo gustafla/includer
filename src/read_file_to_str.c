@@ -5,7 +5,6 @@
 #define BLOCKSIZE 4096
 
 /// Allocates **dst and reads file contents to it, null terminating it.
-/// Returns EXIT_FAILURE on error, and otherwise EXIT_SUCCESS (0).
 read_result_t read_file_to_str(char **dst, size_t *len, char const *filename) {
 	read_result_t rc = READ_OK;
 
