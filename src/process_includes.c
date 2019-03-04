@@ -71,8 +71,11 @@ int local_include(
 	return rc;
 }
 
-#define KEYWORD "#include"
-#define KW_LEN sizeof(KEYWORD)
+#define KW_INCLUDE "#include"
+#define KW_DEFINE "#define"
+#define KW_ENDIF "#endif"
+#define KW_IF "#if"
+#define NDEF "ndef"
 
 size_t process_includes(char **dst, char *sourcecode) {
 	int linen = 1;
@@ -88,11 +91,19 @@ size_t process_includes(char **dst, char *sourcecode) {
 		} else if (newline && *i == '#') {
 			fprintf(stderr, "Preprocessor directive at line %d\n", linen);
 
-			// only process #include
-			if (strncmp(i, KEYWORD, KW_LEN-1) == 0) {
+			if (strncmp(i, KW_IF, sizeof(KW_IF) - 1) == 0) {
+				fprintf(stderr, "...which was an if\n");
+
+			} else if (strncmp(i, KW_ENDIF, sizeof(KW_ENDIF) - 1) == 0) {
+				fprintf(stderr, "...which was an endif\n");
+	
+			} else if (strncmp(i, KW_DEFINE, sizeof(KW_DEFINE) - 1) == 0) {
+				fprintf(stderr, "...which was a define\n");
+	
+			} else if (strncmp(i, KW_INCLUDE, sizeof(KW_INCLUDE) - 1) == 0) {
 				fprintf(stderr, "...which was an include\n");
 				// seek whitespace until filename quotation
-				char *q = i + KW_LEN;
+				char *q = i + sizeof(KW_INCLUDE) - 1;
 				while (*q == ' ' || *q == '\t') q++;
 
 				// only process local includes
