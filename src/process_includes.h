@@ -3,6 +3,11 @@
 
 #include <stddef.h>
 
-size_t process_includes(char **dst, char *sourcecode);
+typedef enum {
+	INCLUDE_OK,
+	INCLUDE_ERR
+} include_result_t;
+
+include_result_t process_includes(char **dst, size_t *len, char *sourcecode);
 
 #endif // PROCESS_INCLUDES_H

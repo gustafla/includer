@@ -12,9 +12,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, read_get_status_message(result), argv[i]);
 		if (result == READ_OK) {
 			char *processed = NULL;
-			size_t len_processed = process_includes(&processed, source);
-
-			if (len_processed) {
+			if (process_includes(&processed, NULL, source) == INCLUDE_OK) {
 				printf("%s", processed);
 			} else {
 				fprintf(stderr, "Failed to process %s\n", argv[i]);

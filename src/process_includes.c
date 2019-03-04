@@ -25,13 +25,13 @@ void append(char **buffer, char *source, size_t *bufsize, size_t len) {
 	*bufsize += len;
 }
 
-int local_include(
+include_result_t local_include(
 		char *q,
 		char **lastpoint,
 		char **buffer,
 		size_t *bufsize) {
 
-	int rc = EXIT_FAILURE;
+	include_result_t rc = INCLUDE_ERR;
 
 	// find end of filename
 	char *f = q + 1;
@@ -44,16 +44,15 @@ int local_include(
 
 	// read the file that needs to be included
 	char *str = NULL;
-	read_result_t result = read_file_to_str(&str, NULL, filename);
-	fprintf(stderr, read_get_status_message(result), filename);
+	read_result_t result_read = read_file_to_str(&str, NULL, filename);
+	fprintf(stderr, read_get_status_message(result_read), filename);
 
-	if (result == READ_OK) {
+	if (result_read == READ_OK) {
 		// recursively process its includes
 		fprintf(stderr, "Processing %s\n", filename);
 		char *processed = NULL;
-		size_t len_processed = process_includes(&processed, str);
-
-		if (len_processed) {
+		size_t len_processed = 0;
+		if (process_includes(&processed, &len_processed, str) == INCLUDE_OK) {
 			fprintf(stderr, "Finished %s\n", filename);
 
 			// append to output buffer
@@ -63,7 +62,7 @@ int local_include(
 			while (*f != '\n' && *f != '\0') f++;
 			*lastpoint = f + 1;
 
-			rc = EXIT_SUCCESS;
+			rc = INCLUDE_OK;
 		}
 		free(processed);
 	}
@@ -78,11 +77,14 @@ int local_include(
 #define KW_IF "#if"
 #define NDEF "ndef"
 
-size_t process_includes(char **dst, char *sourcecode) {
+include_result_t process_includes(char **dst, size_t *len, char *sourcecode) {
 	int linen = 1;
 	bool newline = true;
-	size_t bufsize = 0;
 	char *lastpoint = sourcecode;
+
+	// allow for NULL len parameter
+	size_t local_len = 0;
+	if (!len) len = &local_len;
 
 	for (char *i = sourcecode; *i; i++) {
 		if (*i == '\n') {
@@ -112,11 +114,11 @@ size_t process_includes(char **dst, char *sourcecode) {
 					fprintf(stderr, "...which was a local include\n");
 
 					// copy input before include directive to output
-					append(dst, lastpoint, &bufsize, (size_t)(i - lastpoint));
+					append(dst, lastpoint, len, (size_t)(i - lastpoint));
 
-					if (local_include(q, &lastpoint, dst, &bufsize)) {
+					if (local_include(q, &lastpoint, dst, len) == INCLUDE_ERR) {
 						fprintf(stderr, "Can't process line %d\n", linen);
-						return 0;
+						return INCLUDE_ERR;
 					}
 				}
 			}
@@ -124,12 +126,12 @@ size_t process_includes(char **dst, char *sourcecode) {
 		newline = false;
 	}
 
-	// append trailing input to output
-	append(dst, lastpoint, &bufsize, strlen(lastpoint));
+	// append trailing input to output and terminate
+	size_t len_suffix = strlen(lastpoint);
+	*dst = (char*)realloc(*dst, *len + len_suffix + 1);
+	memcpy(*dst + *len, lastpoint, len_suffix);
+	*len += len_suffix;
+	(*dst)[*len] = '\0';
 
-	// null terminate
-	*dst = (char*)realloc(*dst, bufsize + 1);
-	(*dst)[bufsize] = '\0';
-
-	return bufsize;
+	return INCLUDE_OK;
 }
