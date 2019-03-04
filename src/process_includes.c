@@ -38,25 +38,26 @@ int local_include(
 	seek_line(&f, cmp_is_not_quotation);
 
 	// allocate and set up a filename buffer
-	size_t len = f - (q + 1);
-	char *filename = (char*)calloc(sizeof(char), len + 1);
-	strncpy(filename, q + 1, len);
+	size_t len_filename = f - (q + 1);
+	char *filename = (char*)calloc(sizeof(char), len_filename + 1);
+	strncpy(filename, q + 1, len_filename);
 
 	// read the file that needs to be included
 	char *str = NULL;
-	len = read_file_to_str(&str, filename);
+	read_result_t result = read_file_to_str(&str, NULL, filename);
+	fprintf(stderr, read_get_status_message(result), filename);
 
-	if (len) {
+	if (result == READ_OK) {
 		// recursively process its includes
 		fprintf(stderr, "Processing %s\n", filename);
 		char *processed = NULL;
-		len = process_includes(&processed, str);
+		size_t len_processed = process_includes(&processed, str);
 
-		if (len) {
+		if (len_processed) {
 			fprintf(stderr, "Finished %s\n", filename);
 
 			// append to output buffer
-			append(buffer, processed, bufsize, len);
+			append(buffer, processed, bufsize, len_processed);
 
 			// mark last place before which did processing
 			while (*f != '\n' && *f != '\0') f++;

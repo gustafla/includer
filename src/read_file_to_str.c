@@ -2,30 +2,53 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-size_t read_file_to_str(char **dst, char const *filename) {
+#define BLOCKSIZE 4096
+
+/// Allocates **dst and reads file contents to it, null terminating it.
+/// Returns EXIT_FAILURE on error, and otherwise EXIT_SUCCESS (0).
+read_result_t read_file_to_str(char **dst, size_t *len, char const *filename) {
+	read_result_t rc = READ_OK;
+
+	// allow for NULL len parameter
+	size_t internal_len = 0;
+	if (!len) len = &internal_len;
+
     FILE *file = fopen(filename, "rb");
 	if (file) {
-		fseek(file, 0, SEEK_END);
-		size_t len = ftell(file);
-		fprintf(stderr, "File %s opened. len = %lu\n", filename, len);
-		if (len) {
-			*dst = (char*)malloc(len+1);
-			fseek(file, 0, SEEK_SET);
+		while (!feof(file)) {
+			// allocate memory for next read
+			*dst = (char*)realloc(*dst, *len + BLOCKSIZE);
+			if (!*dst) {
+				rc = READ_ERR_MEMORY;
+				goto cleanup;
+			}
 
-			size_t read = fread(*dst, sizeof(char), len, file);
-
-			(*dst)[len] = '\0';
-
-			fclose(file);
-
-			if (read == len) {
-				return len;
-			} else {
-				fprintf(stderr, "Failed to read file %s\n", filename);
+			// read from file to buffer
+			*len += fread(*dst + *len, sizeof(char), BLOCKSIZE, file);
+			if (ferror(file)) {
+				rc = READ_ERR_READ;
+				goto cleanup;
 			}
 		}
+
+		// null terminate
+		*dst = (char*)realloc(*dst, *len + 1);
+		(*dst)[*len] = '\0';
 	} else {
-		fprintf(stderr, "Cannot open file %s\n", filename);
+		rc = READ_ERR_OPEN_FILE;
 	}
-	return 0;
+
+cleanup:
+	fclose(file);
+	return rc;
+}
+
+char const *read_get_status_message(read_result_t result) {
+	switch (result) {
+		case READ_OK: return "File %s read\n";
+		case READ_ERR_OPEN_FILE: return "Failed to open file %s\n";
+		case READ_ERR_MEMORY: return "Failed to allocate a buffer for %s\n";
+		case READ_ERR_READ: return "An error occured while reading file %s\n";
+	}
+	return "Reading file %s failed for an unknown reason\n";
 }
