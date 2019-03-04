@@ -16,8 +16,8 @@ read_result_t read_file_to_str(char **dst, size_t *len, char const *filename) {
     FILE *file = fopen(filename, "rb");
 	if (file) {
 		for (int i=1; !feof(file); i++) {
-			// allocate memory for next read, first time add one byte for null
-			*dst = (char*)realloc(*dst, *len + BLOCKSIZE * i + (i == 1));
+			// allocate memory for next read, add one byte for null
+			*dst = (char*)realloc(*dst, *len + BLOCKSIZE * i + 1);
 			if (!*dst) {
 				rc = READ_ERR_MEMORY;
 				goto cleanup;
