@@ -1,6 +1,6 @@
 #include "read_file_to_str.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define BLOCKSIZE 4096
 
@@ -15,16 +15,16 @@ read_result_t read_file_to_str(char **dst, size_t *len, char const *filename) {
 
     FILE *file = fopen(filename, "rb");
 	if (file) {
-		while (!feof(file)) {
-			// allocate memory for next read
-			*dst = (char*)realloc(*dst, *len + BLOCKSIZE);
+		for (int i=1; !feof(file); i++) {
+			// allocate memory for next read, first time add one byte for null
+			*dst = (char*)realloc(*dst, *len + BLOCKSIZE * i + (i == 1));
 			if (!*dst) {
 				rc = READ_ERR_MEMORY;
 				goto cleanup;
 			}
 
 			// read from file to buffer
-			*len += fread(*dst + *len, sizeof(char), BLOCKSIZE, file);
+			*len += fread(*dst + *len, sizeof(char), BLOCKSIZE * i, file);
 			if (ferror(file)) {
 				rc = READ_ERR_READ;
 				goto cleanup;
@@ -32,7 +32,6 @@ read_result_t read_file_to_str(char **dst, size_t *len, char const *filename) {
 		}
 
 		// null terminate
-		*dst = (char*)realloc(*dst, *len + 1);
 		(*dst)[*len] = '\0';
 	} else {
 		rc = READ_ERR_OPEN_FILE;
