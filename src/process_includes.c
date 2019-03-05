@@ -221,7 +221,7 @@ include_result_t process(char **dst, size_t *len, char *source) {
 		newline = false;
 	}
 
-	// append trailing input to output and terminate
+	// append trailing input to output and terminate the string
 	size_t len_suffix = strlen(lastpoint);
 	*dst = (char*)realloc(*dst, *len + len_suffix + 1);
 	memcpy(*dst + *len, lastpoint, len_suffix);
