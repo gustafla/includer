@@ -12,7 +12,7 @@ read_result_t read_file_to_str(char **dst, size_t *len, char const *filename) {
 	size_t internal_len = 0;
 	if (!len) len = &internal_len;
 
-    FILE *file = fopen(filename, "rb");
+	FILE *file = fopen(filename, "rb");
 	if (file) {
 		for (int i=1; !feof(file); i++) {
 			// allocate memory for next read, add one byte for null
