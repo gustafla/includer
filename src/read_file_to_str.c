@@ -19,25 +19,28 @@ read_result_t read_file_to_str(char **dst, size_t *len, char const *filename) {
 			*dst = (char*)realloc(*dst, *len + BLOCKSIZE * i + 1);
 			if (!*dst) {
 				rc = READ_ERR_MEMORY;
-				goto cleanup;
+				break;
 			}
 
 			// read from file to buffer
 			*len += fread(*dst + *len, sizeof(char), BLOCKSIZE * i, file);
 			if (ferror(file)) {
 				rc = READ_ERR_READ;
-				goto cleanup;
+				break;
 			}
 		}
 
 		// null terminate
-		(*dst)[*len] = '\0';
+		if (rc == READ_OK) {
+			(*dst)[*len] = '\0';
+		}
+
+		// close file
+		fclose(file);
 	} else {
 		rc = READ_ERR_OPEN_FILE;
 	}
 
-cleanup:
-	fclose(file);
 	return rc;
 }
 
