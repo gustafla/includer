@@ -31,7 +31,7 @@ read_result_t read_file_to_str(char **dst, size_t *len, char const *filename) {
 		}
 
 		// null terminate
-		if (rc == READ_OK) {
+		if (rc != READ_ERR_MEMORY) {
 			(*dst)[*len] = '\0';
 		}
 
