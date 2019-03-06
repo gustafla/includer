@@ -34,12 +34,16 @@ char *copy_str(char *str) {
 	return buf;
 }
 
+#define USAGE "Usage: %s [-Ipath] file\n"
+
 int main(int argc, char *argv[]) {
 	int rc = EXIT_SUCCESS;
 
-	char **paths = (char**)malloc(sizeof(char*));
+	// allocate paths list (0th element is the path of input filename or NULL)
+	char **paths = (char**)calloc(1, sizeof(char*));
 	size_t paths_count = 1;
 
+	// parse arguments
 	int opt;
 	while ((opt = getopt(argc, argv, "I:")) != -1) {
 		switch (opt) {
@@ -48,35 +52,43 @@ int main(int argc, char *argv[]) {
 				paths[paths_count - 1] = copy_str(optarg);
 				break;
 			default:
-				fprintf(stderr, "Usage: %s [-Ipath] file\n", argv[0]);
+				fprintf(stderr, USAGE, argv[0]);
 				rc = EXIT_FAILURE;
 				goto cleanup;
 		}
 	}
 
-	paths[0] = get_directory(argv[optind]);
+	// if got the main source file as argument, process it
+	if (argv[optind]) {
+		// record path of the file or NULL
+		paths[0] = get_directory(argv[optind]);
 
-	char *source = NULL;
-	read_result_t result = read_file_to_str(&source, NULL, argv[optind]);
-	fprintf(stderr, read_get_status_message(result), argv[optind]);
-	if (result == READ_OK) {
-		char *processed = NULL;
-		if (process_includes(&processed, NULL, source) == INCLUDE_OK) {
-			printf("%s", processed);
+		char *source = NULL;
+		read_result_t result = read_file_to_str(&source, NULL, argv[optind]);
+		fprintf(stderr, read_get_status_message(result), argv[optind]);
+		if (result == READ_OK) {
+			char *processed = NULL;
+			if (process_includes(&processed, NULL, source) == INCLUDE_OK) {
+				printf("%s", processed);
+			} else {
+				fprintf(stderr, "Failed to process %s\n", argv[optind]);
+				rc = EXIT_FAILURE;
+			}
+			free(processed);
 		} else {
-			fprintf(stderr, "Failed to process %s\n", argv[optind]);
 			rc = EXIT_FAILURE;
 		}
-		free(processed);
+		free(source);
 	} else {
+		fprintf(stderr, USAGE, argv[0]);
 		rc = EXIT_FAILURE;
 	}
-	free(source);
 
 cleanup:
 	for (size_t i=0; i<paths_count; i++) {
 		free(paths[i]);
 	}
+	free(paths);
 
 	return rc;
 }
