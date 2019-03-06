@@ -1,4 +1,7 @@
 DEBUG?=1
+ifeq ($(MAKECMDGOALS),install)
+DEBUG:=0
+endif
 
 # basic configuration
 EXECUTABLE:=includer
@@ -10,7 +13,7 @@ CFLAGS:=-std=c99 -Wall -Wextra -Wpedantic -Ilib/uthash/include
 PKGS:=
 
 # debug and release build flags
-ifeq ($(DEBUG), 0)
+ifeq ($(DEBUG),0)
 BUILDDIR:=release
 CFLAGS+=-O2 -s -fno-plt -Wl,-O2,--sort-common,--as-needed,-z,relro,-z,now
 else
@@ -24,16 +27,17 @@ CFLAGS+=$(shell pkg-config --cflags $(PKGS))
 LDLIBS+=$(shell pkg-config --libs $(PKGS))
 endif
 
+SOURCEDIR:=src
 TARGET:=$(BUILDDIR)/$(EXECUTABLE)
-SOURCES:=$(wildcard src/*.c)
-OBJS:=$(patsubst %.c,%.o,$(SOURCES:src/%=$(BUILDDIR)/%))
+SOURCES:=$(wildcard $(SOURCEDIR)/*.c)
+OBJS:=$(patsubst %.c,%.o,$(SOURCES:$(SOURCEDIR)/%=$(BUILDDIR)/%))
 
 $(TARGET): $(OBJS)
 	$(info Linking $@)
 	@mkdir -p $(@D)
 	@$(CC) -o $(TARGET) $(CFLAGS) $(OBJS) $(LDLIBS)
 
-$(BUILDDIR)/%.o: src/%.c
+$(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
 	$(info Compiling $<)
 	@mkdir -p $(@D)
 	@$(CC) $(CFLAGS) -c -o $@ $<
