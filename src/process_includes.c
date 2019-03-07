@@ -46,7 +46,9 @@ void append(char **buffer, char *source, size_t *bufsize, size_t len) {
 	*bufsize += len;
 }
 
-include_result_t process(char **dst, size_t *len, char *source);
+arraylist_t *process_paths;
+size_t path_max_len;
+include_result_t process(char**, size_t*, char*);
 
 include_result_t local_include(
 		char *q,
@@ -64,13 +66,31 @@ include_result_t local_include(
 
 	// allocate and set up a filename buffer
 	size_t filename_len = f - (q + 1);
-	char *filename = (char*)calloc(sizeof(char), filename_len + 1);
-	strncpy(filename, q + 1, filename_len);
+	char *filename = (char*)calloc(filename_len + 1, sizeof(char));
+	memcpy(filename, q + 1, filename_len);
+
+	// allocate and set up a path buffer with extra bytes for / and null
+	char *path = (char*)calloc(filename_len + path_max_len + 2, sizeof(char));
 
 	// read the file that needs to be included
 	char *str = NULL;
-	read_result_t result_read = read_file_to_str(&str, NULL, filename);
-	fprintf(stderr, read_get_status_message(result_read), filename);
+	read_result_t result_read = READ_ERR_OPEN_FILE;
+	for (size_t i = 0; i < process_paths->size; i++) {
+		free(str);
+		str = NULL;
+
+		path[0] = '\0';
+		strcat(path, (char*)(process_paths->list[i]));
+		strcat(path, "/");
+		strcat(path, filename);
+	
+		result_read = read_file_to_str(&str, NULL, path);
+		if (result_read == READ_OK) break;
+		if (result_read != READ_ERR_OPEN_FILE) {
+			fprintf(stderr, read_get_status_message(result_read), filename);
+			break;
+		}
+	}
 
 	if (result_read == READ_OK) {
 		// recursively process its includes
@@ -93,6 +113,7 @@ include_result_t local_include(
 	}
 	free(str);
 	free(filename);
+	free(path);
 	return rc;
 }
 
@@ -235,6 +256,12 @@ include_result_t process_includes(char **dst, size_t *len, char *source,
 		arraylist_t *paths) {
 
 	macro_names = NULL;
+	process_paths = paths;
+	path_max_len = 0;
+	for (size_t i = 0; i < paths->size; i++) {
+		size_t len = strlen((char*)(paths->list[i]));
+		if (len > path_max_len) path_max_len = len;
+	}
 
 	include_result_t result = process(dst, len, source);
 

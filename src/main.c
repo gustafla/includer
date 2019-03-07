@@ -64,6 +64,8 @@ int main(int argc, char *argv[]) {
 		char *main_path = get_directory(argv[optind]);
 		if (main_path) {
 			arraylist_add(paths, (void*)main_path);
+		} else {
+			arraylist_add(paths, (void*)".");
 		}
 
 		char *source = NULL;
