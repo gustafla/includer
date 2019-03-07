@@ -2,6 +2,7 @@
 
 #include "read_file_to_str.h"
 #include "process_includes.h"
+#include "arraylist.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,17 +40,16 @@ char *copy_str(char *str) {
 int main(int argc, char *argv[]) {
 	int rc = EXIT_SUCCESS;
 
-	// allocate paths list (0th element is the path of input filename or NULL)
-	char **paths = (char**)calloc(1, sizeof(char*));
-	size_t paths_count = 1;
+	// allocate paths list
+	arraylist_t *paths = arraylist_init(8);
+	if (!paths) return EXIT_FAILURE;
 
 	// parse arguments
 	int opt;
 	while ((opt = getopt(argc, argv, "I:")) != -1) {
 		switch (opt) {
 			case 'I':
-				paths = (char**)realloc(paths, sizeof(char*) * (++paths_count));
-				paths[paths_count - 1] = copy_str(optarg);
+				arraylist_add(paths, (void*)copy_str(optarg));
 				break;
 			default:
 				fprintf(stderr, USAGE, argv[0]);
@@ -61,20 +61,20 @@ int main(int argc, char *argv[]) {
 	// if got the main source file as argument, process it
 	if (argv[optind]) {
 		// record path of the file or NULL
-		paths[0] = get_directory(argv[optind]);
+		arraylist_add(paths, (void*)get_directory(argv[optind]));
 
 		char *source = NULL;
 		read_result_t result = read_file_to_str(&source, NULL, argv[optind]);
 		fprintf(stderr, read_get_status_message(result), argv[optind]);
 		if (result == READ_OK) {
-			char *processed = NULL;
-			if (process_includes(&processed, NULL, source) == INCLUDE_OK) {
-				printf("%s", processed);
+			char *output = NULL;
+			if (process_includes(&output, NULL, source) == INCLUDE_OK) {
+				printf("%s", output);
 			} else {
 				fprintf(stderr, "Failed to process %s\n", argv[optind]);
 				rc = EXIT_FAILURE;
 			}
-			free(processed);
+			free(output);
 		} else {
 			rc = EXIT_FAILURE;
 		}
@@ -85,10 +85,10 @@ int main(int argc, char *argv[]) {
 	}
 
 cleanup:
-	for (size_t i=0; i<paths_count; i++) {
-		free(paths[i]);
+	for (size_t i = 0; i < paths->size; i++) {
+		free(paths->list[i]);
 	}
-	free(paths);
+	arraylist_free(paths);
 
 	return rc;
 }
