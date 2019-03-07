@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 		if (main_path) {
 			arraylist_add(paths, (void*)main_path);
 		} else {
-			arraylist_add(paths, (void*)".");
+			arraylist_add(paths, (void*)copy_str("."));
 		}
 
 		char *source = NULL;
