@@ -60,15 +60,18 @@ int main(int argc, char *argv[]) {
 
 	// if got the main source file as argument, process it
 	if (argv[optind]) {
-		// record path of the file or NULL
-		arraylist_add(paths, (void*)get_directory(argv[optind]));
+		// record path of the file
+		char *main_path = get_directory(argv[optind]);
+		if (main_path) {
+			arraylist_add(paths, (void*)main_path);
+		}
 
 		char *source = NULL;
 		read_result_t result = read_file_to_str(&source, NULL, argv[optind]);
 		fprintf(stderr, read_get_status_message(result), argv[optind]);
 		if (result == READ_OK) {
 			char *output = NULL;
-			if (process_includes(&output, NULL, source) == INCLUDE_OK) {
+			if (process_includes(&output, NULL, source, paths) == INCLUDE_OK) {
 				printf("%s", output);
 			} else {
 				fprintf(stderr, "Failed to process %s\n", argv[optind]);

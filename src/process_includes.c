@@ -231,7 +231,9 @@ include_result_t process(char **dst, size_t *len, char *source) {
 	return INCLUDE_OK;
 }
 
-include_result_t process_includes(char **dst, size_t *len, char *source) {
+include_result_t process_includes(char **dst, size_t *len, char *source,
+		arraylist_t *paths) {
+
 	macro_names = NULL;
 
 	include_result_t result = process(dst, len, source);
