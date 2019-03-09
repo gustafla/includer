@@ -1,8 +1,3 @@
-DEBUG?=1
-ifeq ($(MAKECMDGOALS),install)
-DEBUG:=0
-endif
-
 # basic configuration
 EXECUTABLE:=includer
 PREFIX:=~/.local
@@ -12,10 +7,20 @@ CFLAGS:=-std=c99 -Wall -Wextra -Wpedantic -Ilib/uthash/include
 # library packages for pkg-config
 PKGS:=
 
+# build for debugging by default
+DEBUG?=1
+
+# don't use debug settings if building for the purpose of installing and use
+# native arch settings for compilation
+ifeq ($(MAKECMDGOALS),install)
+DEBUG:=0
+CFLAGS+=-march=native
+endif
+
 # debug and release build flags
 ifeq ($(DEBUG),0)
 BUILDDIR:=release
-CFLAGS+=-O3 -s -fno-plt -Wl,-O3,--sort-common,--as-needed,-z,relro,-z,now
+CFLAGS+=-O3 -s
 else
 BUILDDIR:=debug
 CFLAGS+=-Og -g -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
