@@ -2,6 +2,7 @@
 EXECUTABLE:=includer
 PREFIX:=~/.local
 CC:=gcc
+STRIP:=strip --strip-all
 CFLAGS:=-std=c99 -Wall -Wextra -Wpedantic -Ilib/uthash/include
 
 # library packages for pkg-config
@@ -20,7 +21,7 @@ endif
 # debug and release build flags
 ifeq ($(DEBUG),0)
 BUILDDIR:=release
-CFLAGS+=-O3 -s
+CFLAGS+=-O3
 else
 BUILDDIR:=debug
 CFLAGS+=-Og -g -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer
@@ -41,6 +42,10 @@ $(TARGET): $(OBJS)
 	$(info Linking $@)
 	@mkdir -p $(@D)
 	@$(CC) -o $(TARGET) $(CFLAGS) $(OBJS) $(LDLIBS)
+ifeq ($(DEBUG),0)
+	$(info Stripping $@)
+	@$(STRIP) $(TARGET)
+endif
 
 $(BUILDDIR)/%.o: $(SOURCEDIR)/%.c
 	$(info Compiling $<)
