@@ -1,4 +1,5 @@
 #define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 500
 
 #include "read_file_to_str.h"
 #include "process_includes.h"
