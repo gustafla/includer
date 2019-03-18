@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 2
+#define _POSIX_C_SOURCE 200809L
 
 #include "read_file_to_str.h"
 #include "process_includes.h"
@@ -28,13 +28,6 @@ char *get_directory(char *path) {
 	return buf;
 }
 
-char *copy_str(char *str) {
-	size_t len = strlen(str) + 1;
-	char *buf = (char*)malloc(sizeof(char) * len);
-	memcpy(buf, str, len);
-	return buf;
-}
-
 #define USAGE "Usage: %s [-Ipath] file\n"
 
 int main(int argc, char *argv[]) {
@@ -49,7 +42,7 @@ int main(int argc, char *argv[]) {
 	while ((opt = getopt(argc, argv, "I:")) != -1) {
 		switch (opt) {
 			case 'I':
-				arraylist_add(paths, (void*)copy_str(optarg));
+				arraylist_add(paths, (void*)strdup(optarg));
 				break;
 			default:
 				fprintf(stderr, USAGE, argv[0]);
@@ -65,7 +58,7 @@ int main(int argc, char *argv[]) {
 		if (main_path) {
 			arraylist_add(paths, (void*)main_path);
 		} else {
-			arraylist_add(paths, (void*)copy_str("."));
+			arraylist_add(paths, (void*)strdup("."));
 		}
 
 		char *source = NULL;
